@@ -1,5 +1,0 @@
-https://www.freecodecamp.org/news/extract-data-from-pdf-files-with-python/#:~:text=PDFQuery%20is%20a%20Python%20library,inside%20of%20the%20PDF%20document.
-
-https://www.google.com/search?client=opera-gx&q=python+ai+to+g+et+pdf+data&sourceid=opera&ie=UTF-8&oe=UTF-8
-
-https://mistral.ai

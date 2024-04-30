@@ -7,11 +7,10 @@ CREATE TABLE IF NOT EXISTS `Fornecedor` (
   `idFornecedor` INT NOT NULL AUTO_INCREMENT,
   `empresa` VARCHAR(70) NULL,
   `endereco` VARCHAR(130) NULL,
-  `cep` VARCHAR(10) NULL,
+  `cep` VARCHAR(15) NULL,
   `email` VARCHAR(60) NULL,
   `telefone` VARCHAR(30) NULL,
   `banco` VARCHAR(45) NULL,
-  `nomeCompleto` VARCHAR(80) NULL,
   PRIMARY KEY (`idFornecedor`)
 );
 
@@ -40,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `Avaliacao` (
 );
 
 INSERT INTO Fornecedor VALUES(
-null, "Bananinha Tech", "Haddock Lobo, 505", "03077000", "bananinha@gmail.com", "11940273200", "C6Bank", "Renato Tierno");
+null, "Bananinha Tech", "Haddock Lobo, 505", "03077000", "bananinha@gmail.com", "11940273200", "C6Bank");
 
 INSERT INTO Proposta VALUES(
 null, 1, "Cadeira Preta", "Cadeira de escritório da cor preta", "Unidade", 30, "6000.50");

@@ -135,9 +135,6 @@ frame_status.pack(padx=10, pady=10)
 label_status = tk.Label(frame_status, text="Aguardando arquivo...")
 label_status.grid(row=0, column=0)
 
-# Seção de resultados
-# ... (Adicione aqui a seção para exibir os resultados da extração)
-
 # Botão para processar o arquivo
 botao_processar = tk.Button(app, text="Processar", command=lambda: extrair_informacoes(texto_arquivo.get()))
 botao_processar.pack(pady=10)

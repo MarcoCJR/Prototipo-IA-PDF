@@ -1,12 +1,13 @@
-#  IMPORTAÇÕES
+# Importações
 import tkinter as tk
 from tkinter import filedialog
 from transformers import pipeline
 from tika import parser
 import mysql.connector
 
+# Função para extrair informações do arquivo
 def extrair_informacoes(arquivo):
-    # CREDENCIAIS DO BANCO
+    # Credenciais do banco
     config = {
         'user': 'root',
         'password': '_Arc3usadmin7410',
@@ -16,20 +17,21 @@ def extrair_informacoes(arquivo):
     }
 
     try:
+        # Conexão com o banco de dados
         cnx = mysql.connector.connect(**config)
-        
         cursor = cnx.cursor()
-        
         print("Conexão bem-sucedida!")
-        
+
+        # Extração de texto do arquivo
         raw = parser.from_file(arquivo)
         formatado = raw['content']
-
         context = formatado
 
+        # Modelo de linguagem para responder perguntas
         model_name = 'pierreguillou/bert-base-cased-squad-v1.1-portuguese'
         nlp = pipeline("question-answering", model=model_name)
 
+        # Extração de informações da empresa
         question1 = "Qual o nome da empresa?"
         response1 = nlp(question=question1, context=formatado)
 
@@ -41,14 +43,14 @@ def extrair_informacoes(arquivo):
 
         question4 = "Qual o email da empresa?"
         response4 = nlp(question=question4, context=formatado)
-            
+
         question5 = "Qual o telefone da empresa?"
         response5 = nlp(question=question5, context=formatado)
-        
+
         question6 = "Qual o banco da empresa?"
         response6 = nlp(question=question6, context=formatado)
-        
-        
+
+        # Extração de informações da proposta
         question7 = "Qual o item?"
         response7 = nlp(question=question7, context=formatado)
 
@@ -60,11 +62,11 @@ def extrair_informacoes(arquivo):
 
         question10 = "Qual a quantidade total?"
         response10 = nlp(question=question10, context=formatado)
-            
+
         question11 = "Qual o valor total?"
-        response11 = nlp(question=question11, context=formatado)    
-        
-        
+        response11 = nlp(question=question11, context=formatado)
+
+        # Inserção de dados no banco de dados
         query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, email, telefone, banco) VALUES (%s, %s, %s, %s, %s, %s)"
         data_fornecedor = (
             response1['answer'],
@@ -74,12 +76,11 @@ def extrair_informacoes(arquivo):
             response5['answer'],
             response6['answer']
         )
-        
         cursor.execute(query_fornecedor, data_fornecedor)
         cnx.commit()
-        
+
         id_fornecedor = cursor.lastrowid
-        
+
         query_proposta = "INSERT INTO Proposta (fkFornecedor, item, especificacao, unidade, qtdTotal, valorTotal) VALUES (%s, %s, %s, %s, %s, %s)"
         data_proposta = (
             id_fornecedor,
@@ -89,12 +90,12 @@ def extrair_informacoes(arquivo):
             response10['answer'],
             response11['answer']
         )
-
         cursor.execute(query_proposta, data_proposta)
         cnx.commit()
-        
+
     except mysql.connector.Error as err:
         print(f"Erro ao conectar: {err}")
+
     finally:
         cursor.close()
         cnx.close()

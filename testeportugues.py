@@ -8,6 +8,7 @@ import mysql.connector
 # Função para extrair informações do arquivo
 def extrair_informacoes(arquivo):
     # Credenciais do banco
+    print("Cheguei na config banco")
     config = {
         'user': 'root',
         'password': '_Arc3usadmin7410',
@@ -16,17 +17,21 @@ def extrair_informacoes(arquivo):
         'raise_on_warnings': True
     }
 
+    cnx = mysql.connector.connect(**config)
+    cursor = cnx.cursor()
+    
     try:
+        print("Cheguei na conexão")
         # Conexão com o banco de dados
-        cnx = mysql.connector.connect(**config)
-        cursor = cnx.cursor()
         print("Conexão bem-sucedida!")
 
+        print("Cheguei na extração")
         # Extração de texto do arquivo
         raw = parser.from_file(arquivo)
         formatado = raw['content']
         context = formatado
 
+        print("Cheguei nas perguntas")
         # Modelo de linguagem para responder perguntas
         model_name = 'pierreguillou/bert-base-cased-squad-v1.1-portuguese'
         nlp = pipeline("question-answering", model=model_name)
@@ -69,6 +74,7 @@ def extrair_informacoes(arquivo):
         
         # ADICIONAR CNPJ
 
+        print("Cheguei no insert")
         # Inserção de dados no banco de dados
         # ESCOLHIDO = FALSE
         query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, email, telefone, banco) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -105,6 +111,7 @@ def extrair_informacoes(arquivo):
         cnx.close()
     
 # Interface gráfica
+print("Criei interface")
 app = tk.Tk()
 app.title("Extrator de Informações")
 
@@ -120,6 +127,7 @@ texto_arquivo.grid(row=0, column=1, padx=10)
 
 # Botão para selecionar o arquivo
 def selecionar_arquivo():
+    print("Cheguei na função criar arquivo")
     try:
         arquivo = tk.filedialog.askopenfilename()
         if arquivo:

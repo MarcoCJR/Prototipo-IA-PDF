@@ -56,7 +56,7 @@ def extrair_informacoes(arquivo):
 
         question8 = "Qual a especificação?"
         response8 = nlp(question=question8, context=formatado)
-
+        # REMOVER UNIDADE
         question9 = "Qual a unidade?"
         response9 = nlp(question=question9, context=formatado)
 
@@ -64,9 +64,13 @@ def extrair_informacoes(arquivo):
         response10 = nlp(question=question10, context=formatado)
 
         question11 = "Qual o valor total?"
+        # STRIPE PARA RETIRAR R$, E VÍRGULA PARA PONTO
         response11 = nlp(question=question11, context=formatado)
+        
+        # ADICIONAR CNPJ
 
         # Inserção de dados no banco de dados
+        # ESCOLHIDO = FALSE
         query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, email, telefone, banco) VALUES (%s, %s, %s, %s, %s, %s)"
         data_fornecedor = (
             response1['answer'],

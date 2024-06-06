@@ -1,18 +1,22 @@
-# Importações
 import tkinter as tk
 from tkinter import filedialog
 from transformers import pipeline
 from tika import parser
 import mysql.connector
+import os
+import re
 
-# Função para extrair informações do arquivo
+def formatar_valor(valor):
+    # Remove o símbolo de moeda e os pontos de milhar, e substitui a vírgula pelo ponto decimal
+    valor = valor.replace("R$", "").replace(".", "").replace(",", ".")
+    return float(valor)
+
 def extrair_informacoes(arquivo):
-    # Credenciais do banco
     print("Cheguei na config banco")
     config = {
         'user': 'root',
         'password': '_Arc3usadmin7410',
-        'host': 'localhost',
+        'host': 'fornecedores.cnuo4ucey4lj.us-east-1.rds.amazonaws.com',
         'database': 'Fornecedores',
         'raise_on_warnings': True
     }
@@ -22,83 +26,69 @@ def extrair_informacoes(arquivo):
     
     try:
         print("Cheguei na conexão")
-        # Conexão com o banco de dados
         print("Conexão bem-sucedida!")
-
         print("Cheguei na extração")
-        # Extração de texto do arquivo
+        
         raw = parser.from_file(arquivo)
         formatado = raw['content']
         context = formatado
 
         print("Cheguei nas perguntas")
-        # Modelo de linguagem para responder perguntas
         model_name = 'pierreguillou/bert-base-cased-squad-v1.1-portuguese'
         nlp = pipeline("question-answering", model=model_name)
 
-        # Extração de informações da empresa
-        question1 = "Qual o nome da empresa?"
-        response1 = nlp(question=question1, context=formatado)
+        questions = [
+            "Qual o nome da empresa?",
+            "Qual o endereço?",
+            "Qual o CEP da empresa?",
+            "Qual o CNPJ da empresa?",
+            "Qual o e-mail?",
+            "Qual o telefone da empresa?",
+            "Qual o banco da empresa?",
+            "Quanto tempo de experiência?",
+            "Qual a data de entrega?",
+            "Qual o valor total?"
+        ]
 
-        question2 = "Quais o endereço?"
-        response2 = nlp(question=question2, context=formatado)
-
-        question3 = "Qual o CEP da empresa?"
-        response3 = nlp(question=question3, context=formatado)
-
-        question4 = "Qual o email da empresa?"
-        response4 = nlp(question=question4, context=formatado)
-
-        question5 = "Qual o telefone da empresa?"
-        response5 = nlp(question=question5, context=formatado)
-
-        question6 = "Qual o banco da empresa?"
-        response6 = nlp(question=question6, context=formatado)
-
-        # Extração de informações da proposta
-        question7 = "Qual o item?"
-        response7 = nlp(question=question7, context=formatado)
-
-        question8 = "Qual a especificação?"
-        response8 = nlp(question=question8, context=formatado)
-        # REMOVER UNIDADE
-        question9 = "Qual a unidade?"
-        response9 = nlp(question=question9, context=formatado)
-
-        question10 = "Qual a quantidade total?"
-        response10 = nlp(question=question10, context=formatado)
-
-        question11 = "Qual o valor total?"
-        # STRIPE PARA RETIRAR R$, E VÍRGULA PARA PONTO
-        response11 = nlp(question=question11, context=formatado)
+        responses = [nlp(question=q, context=formatado) for q in questions]
         
-        # ADICIONAR CNPJ
+        response_dict = {f"response{i+1}": responses[i]['answer'] for i in range(len(responses))}
+
+        # Formatar o valor total para decimal
+        valor_total_formatado = formatar_valor(response_dict['response10'])
+        
+        # Extrair o nome do arquivo do caminho completo
+        nome_arquivo = os.path.basename(arquivo)
+
+        # Extrair o número da solicitação do nome do arquivo
+        match = re.search(r'\d+', nome_arquivo)
+        id_solicitacao = int(match.group()) if match else None
 
         print("Cheguei no insert")
-        # Inserção de dados no banco de dados
-        # ESCOLHIDO = FALSE
-        query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, email, telefone, banco) VALUES (%s, %s, %s, %s, %s, %s)"
+        
+        query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, cnpj, email, telefone, banco, anosExperiencia) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
         data_fornecedor = (
-            response1['answer'],
-            response2['answer'],
-            response3['answer'],
-            response4['answer'],
-            response5['answer'],
-            response6['answer']
+            response_dict['response1'],
+            response_dict['response2'],
+            response_dict['response3'],
+            response_dict['response4'],
+            response_dict['response5'],
+            response_dict['response6'],
+            response_dict['response7'],
+            response_dict['response8']
         )
         cursor.execute(query_fornecedor, data_fornecedor)
         cnx.commit()
 
         id_fornecedor = cursor.lastrowid
 
-        query_proposta = "INSERT INTO Proposta (fkFornecedor, item, especificacao, unidade, qtdTotal, valorTotal) VALUES (%s, %s, %s, %s, %s, %s)"
+        query_proposta = "INSERT INTO Proposta (fkFornecedor, fkSolicitacao, nome, dtEntrega, valorTotal, escolhido) VALUES (%s, %s, %s, %s, %s, False)"
         data_proposta = (
             id_fornecedor,
-            response7['answer'],
-            response8['answer'],
-            response9['answer'],
-            response10['answer'],
-            response11['answer']
+            id_solicitacao,
+            nome_arquivo,
+            response_dict['response9'],
+            valor_total_formatado  # Usar o valor formatado
         )
         cursor.execute(query_proposta, data_proposta)
         cnx.commit()
@@ -109,13 +99,12 @@ def extrair_informacoes(arquivo):
     finally:
         cursor.close()
         cnx.close()
-    
-# Interface gráfica
+        print("Terminou")
+
 print("Criei interface")
 app = tk.Tk()
 app.title("Extrator de Informações")
 
-# Seção de seleção de arquivo
 frame_selecao_arquivo = tk.Frame(app, borderwidth=10)
 frame_selecao_arquivo.pack(padx=10, pady=10)
 
@@ -125,7 +114,6 @@ rotulo_arquivo.grid(row=0, column=0, sticky=tk.W)
 texto_arquivo = tk.Entry(frame_selecao_arquivo)
 texto_arquivo.grid(row=0, column=1, padx=10)
 
-# Botão para selecionar o arquivo
 def selecionar_arquivo():
     print("Cheguei na função criar arquivo")
     try:
@@ -140,14 +128,12 @@ def selecionar_arquivo():
 botao_selecionar = tk.Button(frame_selecao_arquivo, text="Selecionar Arquivo", command=selecionar_arquivo)
 botao_selecionar.grid(row=0, column=2, padx=10)
 
-# Seção de status
 frame_status = tk.Frame(app, borderwidth=10)
 frame_status.pack(padx=10, pady=10)
 
 label_status = tk.Label(frame_status, text="Aguardando arquivo...")
 label_status.grid(row=0, column=0)
 
-# Botão para processar o arquivo
 botao_processar = tk.Button(app, text="Processar", command=lambda: extrair_informacoes(texto_arquivo.get()))
 botao_processar.pack(pady=10)
 

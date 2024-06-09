@@ -7,7 +7,6 @@ import os
 import re
 
 def formatar_valor(valor):
-    # Remove o símbolo de moeda e os pontos de milhar, e substitui a vírgula pelo ponto decimal
     valor = valor.replace("R$", "").replace(".", "").replace(",", ".")
     return float(valor)
 
@@ -16,7 +15,7 @@ def extrair_informacoes(arquivo):
     config = {
         'user': 'root',
         'password': '_Arc3usadmin7410',
-        'host': 'fornecedores.cnuo4ucey4lj.us-east-1.rds.amazonaws.com',
+        'host': 'fornecedores.cpkm4kesg43v.us-east-1.rds.amazonaws.com',
         'database': 'Fornecedores',
         'raise_on_warnings': True
     }
@@ -54,13 +53,10 @@ def extrair_informacoes(arquivo):
         
         response_dict = {f"response{i+1}": responses[i]['answer'] for i in range(len(responses))}
 
-        # Formatar o valor total para decimal
         valor_total_formatado = formatar_valor(response_dict['response10'])
         
-        # Extrair o nome do arquivo do caminho completo
         nome_arquivo = os.path.basename(arquivo)
 
-        # Extrair o número da solicitação do nome do arquivo
         match = re.search(r'\d+', nome_arquivo)
         id_solicitacao = int(match.group()) if match else None
 
@@ -88,7 +84,7 @@ def extrair_informacoes(arquivo):
             id_solicitacao,
             nome_arquivo,
             response_dict['response9'],
-            valor_total_formatado  # Usar o valor formatado
+            valor_total_formatado
         )
         cursor.execute(query_proposta, data_proposta)
         cnx.commit()

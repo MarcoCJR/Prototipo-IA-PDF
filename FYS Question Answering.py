@@ -10,6 +10,9 @@ def formatar_valor(valor):
     valor = valor.replace("R$", "").replace(".", "").replace(",", ".")
     return float(valor)
 
+def remover_hifen_cep(cep):
+    return cep.replace("-", "")
+
 def extrair_informacoes(arquivo):
     print("Cheguei na config banco")
     config = {
@@ -38,13 +41,12 @@ def extrair_informacoes(arquivo):
 
         questions = [
             "Qual o nome da empresa?",
-            "Qual o endereço?",
-            "Qual o CEP da empresa?",
             "Qual o CNPJ da empresa?",
-            "Qual o e-mail?",
+            "Qual o endereço da empresa?",
+            "Qual o CEP da empresa?",
+            "Qual o e-mail da empresa?",
             "Qual o telefone da empresa?",
-            "Qual o banco da empresa?",
-            "Quanto tempo de experiência?",
+            "Quanto tempo de experiência a empresa possui?",
             "Qual a data de entrega?",
             "Qual o valor total?"
         ]
@@ -53,25 +55,26 @@ def extrair_informacoes(arquivo):
         
         response_dict = {f"response{i+1}": responses[i]['answer'] for i in range(len(responses))}
 
-        valor_total_formatado = formatar_valor(response_dict['response10'])
+        valor_total_formatado = formatar_valor(response_dict['response9'])
+        
+        cep_formatado = remover_hifen_cep(response_dict['response4'])
         
         nome_arquivo = os.path.basename(arquivo)
 
-        match = re.search(r'\d+', nome_arquivo)
+        match = re.search(r'(\d+)$', nome_arquivo)
         id_solicitacao = int(match.group()) if match else None
 
         print("Cheguei no insert")
         
-        query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, cnpj, email, telefone, banco, anosExperiencia) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        query_fornecedor = "INSERT INTO Fornecedor (empresa, endereco, cep, cnpj, email, telefone, anosExperiencia) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         data_fornecedor = (
             response_dict['response1'],
-            response_dict['response2'],
             response_dict['response3'],
-            response_dict['response4'],
+            cep_formatado,
+            response_dict['response2'],
             response_dict['response5'],
             response_dict['response6'],
-            response_dict['response7'],
-            response_dict['response8']
+            response_dict['response7']
         )
         cursor.execute(query_fornecedor, data_fornecedor)
         cnx.commit()
@@ -83,7 +86,7 @@ def extrair_informacoes(arquivo):
             id_fornecedor,
             id_solicitacao,
             nome_arquivo,
-            response_dict['response9'],
+            response_dict['response8'],
             valor_total_formatado
         )
         cursor.execute(query_proposta, data_proposta)
